@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For Us by Us Soft Concept</title>
+    <style>
+        /* BASE & DESIGN GENERAL */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #0f172a; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; color: #f1f5f9; -webkit-user-select: none; user-select: none; }
+        
+        /* CONTENEUR PRINCIPAL */
+        .container { width: 100%; max-width: 440px; background-color: #1e293b; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); padding: 24px; border: 1px solid #334155; transition: max-width 0.3s ease; }
+        .container.large { max-width: 680px; }
+        .hidden { display: none !important; }
+        
+        /* CHRONOMETRE */
+        .timer-box { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px; background-color: rgba(69, 26, 3, 0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 8px 16px; color: #fbbf24; font-family: monospace; font-size: 1.125rem; font-weight: bold; }
+        .timer-box.alert { background-color: rgba(127, 29, 29, 0.4); border-color: rgba(239, 68, 68, 0.5); color: #f87171; }
+        
+        /* BARRE DE PROGRESSION */
+        .progress-bg { width: 100%; background-color: #334155; border-radius: 9999px; height: 8px; margin-bottom: 24px; }
+        .progress-bar { background-color: #6366f1; height: 8px; border-radius: 9999px; width: 0%; transition: width 0.3s ease; }
+        
+        /* EN-TETE QUESTION */
+        .question-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .q-number { font-size: 0.75rem; font-weight: 600; color: #818cf8; text-transform: uppercase; letter-spacing: 0.05em; }
+        .q-theme { font-size: 0.75rem; font-weight: 500; color: #94a3b8; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+        .question-text { font-size: 1.125rem; font-weight: bold; margin-bottom: 24px; color: #ffffff; line-height: 1.4; }
+        
+        /* BOUTONS OPTIONS */
+        .options-list { display: flex; flex-direction: column; gap: 12px; }
+        .option-btn { width: 100%; text-align: left; padding: 12px 16px; border-radius: 12px; border: 1px solid #334155; background-color: #1e293b; color: #cbd5e1; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: background 0.15s ease; -webkit-tap-highlight-color: transparent; }
+        .option-btn:active { transform: scale(0.99); }
+        
+        /* ETATS DE VALIDATION */
+        .option-btn.correct { border-color: #22c55e; background-color: rgba(20, 83, 45, 0.4); color: #4ade80; }
+        .option-btn.wrong { border-color: #ef4444; background-color: rgba(127, 29, 29, 0.4); color: #f87171; }
+        .option-btn.neutral { border-color: #1e293b; background-color: rgba(30, 41, 59, 0.4); color: #64748b; }
+        
+        /* BOUTON ACTION PRINCIPAL */
+        .action-btn { width: 100%; margin-top: 24px; background-color: #4f46e5; color: #ffffff; font-weight: 600; padding: 12px 16px; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); font-size: 1rem; }
+        .action-btn:hover { background-color: #4338ca; }
+        .action-btn.secondary { background-color: #ffffff; color: #0f172a; }
+        .action-btn.muted { background-color: #334155; color: #ffffff; }
+        .action-btn.danger { background-color: #dc2626; }
+        
+        /* ECRANS SPECIFIQUES */
+        .text-center { text-align: center; }
+        .score-box { background-color: #0f172a; border-radius: 12px; padding: 16px; margin-bottom: 24px; border: 1px solid #334155; }
+        .score-title { font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 4px; }
+        .score-val { font-size: 2.25rem; font-weight: 800; color: #818cf8; }
+        
+        /* REVISION DES ERREURS */
+        .errors-container { display: flex; flex-direction: column; gap: 24px; max-height: 55vh; overflow-y: auto; padding-right: 4px; margin-top: 16px; text-align: left; }
+        .error-card { background-color: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 16px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 12px; }
+        .feedback-box { font-size: 0.75rem; padding: 12px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3); background-color: rgba(127, 29, 29, 0.2); color: #fca5a5; }
+        .feedback-box.correct-ans { border-color: rgba(34, 197, 94, 0.3); background-color: rgba(20, 83, 45, 0.2); color: #86efac; }
+        .feedback-title { font-weight: bold; display: block; margin-bottom: 2px; }
+    </style>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script type="text/javascript">
+        emailjs.init({ publicKey: "HRODpKSxHCmOnzgGW" });
+    </script>
+</head>
+<body>
+    <div id="main-container" class="container">
+        <div id="cheat-screen" class="hidden text-center" style="padding: 16px 0;">
+            <h2 style="color: #f87171; font-size: 1.5rem; font-weight: bold; margin-bottom: 8px;">Security Alert</h2>
+            <p style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 24px; line-height: 1.4;">You have left the test screen. This action is detected as an attempt to cheat.</p>
+            <div style="background-color: rgba(127,29,29,0.2); border: 1px solid rgba(239,68,68,0.2); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                <span style="font-size: 0.75rem; color: #f87171; display: block; margin-bottom: 4px;">Penalty applied</span>
+                <span style="font-size: 0.875rem; font-weight: 500;">-5 minutes of the overall time</span>
+            </div>
+            <button id="resume-btn" class="action-btn danger">Retry</button>
+        </div>
+
+        <div id="quiz-screen">
+            <div id="global-timer" class="timer-box">2:00:00</div>
+            <div class="progress-bg"><div id="progress-bar" class="progress-bar"></div></div>
+            <div class="question-header">
+                <span id="question-number" class="q-number">Question 1</span>
+                <span id="question-theme" class="q-theme">Category</span>
+            </div>
+            <h2 id="question-text" class="question-text">Loading...</h2>
+            <div id="options-container" class="options-list"></div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button id="prev-btn" class="action-btn secondary hidden" style="margin-top: 0;">Précédent</button>
+                <button id="next-btn" class="action-btn" style="margin-top: 0;">Question suivante</button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="hidden text-center">
+            <h2 id="result-title" style="font-size: 1.5rem; font-weight: bold; margin-bottom: 8px;">End of the Test</h2>
+            <p id="result-message" style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 24px;">Summary of your general knowledge in air traffic management</p>
+            <div class="score-box">
+                <span class="score-title">Your final score</span>
+                <span id="final-score" class="score-val">0/0</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button id="review-btn" class="action-btn" style="background-color: #d97706;" onmouseover="this.style.backgroundColor='#b45309'" onmouseout="this.style.backgroundColor='#d97706'">Revoir les erreurs</button>
+                <button id="restart-btn" class="action-btn secondary">Try again</button>
+            </div>
+        </div>
+
+        <div id="review-screen" class="hidden">
+            <h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 4px;">Revisit Wrong Answers</h2>
+            <p style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 16px;">Review your incorrect answers to improve.</p>
+            <div id="errors-list" class="errors-container"></div>
+            <button id="back-to-results-btn" class="action-btn muted">Back to main menu</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 16px; font-size: 0.75rem; color: #64748b; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;">
+            © 2026 Train Your Brain - Tous droits réservés.
+        </div>
+    </div>
+
+    <script>
+        // Vos données de questions d'origine
+        const originalQuizData = [
+            {theme: "Circulation Aérienne", question: "1. La clairance initiale au départ comprend :", options: ["L'autorisation de roulage et de décollage;", "La clairance de départ et la clairance de décollage;", "L'autorisation de décollage et le SID;", "La clairance de départ et la clairance de route;"], correct: 3 },
+            {theme: "Circulation Aérienne", question: "2. La clairance initiale d'arrivée doit comprise entre autre :", options: ["l'altitude de l'aérodrome d'arrivée;", "l'altitude minimale de secteur;", "la piste en service et la procédure prévue;", "la piste en service et les procédures disponibles."], correct: 2 },
+            {theme: "Circulation Aérienne", question: "3. La clairance initiale à l'arrivée est délivrée:", options: ["Avant toute pénétration dans un espace arien;", "Avant toute pénétration en espace aérien contrôlé;", "Dès le premier contact;", "Dès le début descente des aéronefs à l'arrivée;"], correct: 1 },
+            {theme: "Circulation Aérienne", question: "4. La clairance de route est élaborée:", options: ["Uniquement sur demande du contrôleur chargé du contrôle d'approche;", "Par l'organisme chargé du contrôle régional;", "Par l'organisme chargé du contrôle d'approche;", "Par l'organisme chargé du contrôle d'aérodrome."], correct: 1 },
+            {theme: "Circulation Aérienne", question: "5. La clairance de route est élaborée par:", options: ["L'organisme chargé du contrôle d'approche;", "Le centre d'information de vol (FIC);", "Le centre de contrôle régional (ACC);", "La tour de contrôle en collaboration avec les autres organismes."], correct: 2 }
+        ];
+
+        const QUESTIONS_TO_PLAY = 5;
+        let quizData = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isQuizActive = false;
+        let userErrors = [];
+        const TOTAL_TIME_SECONDS = 120 * 60; // 120 Minutes
+        let timeRemaining = TOTAL_TIME_SECONDS;
+        let timerInterval = null;
+        let ipPublique = "Inconnue (Bloquée/CORS)";
+
+        // Éléments du DOM
+        const mainContainer = document.getElementById('main-container');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const reviewScreen = document.getElementById('review-screen');
+        const cheatScreen = document.getElementById('cheat-screen');
+        const questionNumberEl = document.getElementById('question-number');
+        const questionThemeEl = document.getElementById('question-theme');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextBtn = document.getElementById('next-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const finalScoreEl = document.getElementById('final-score');
+        const reviewBtn = document.getElementById('review-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const resumeBtn = document.getElementById('resume-btn');
+        const backToResultsBtn = document.getElementById('back-to-results-btn');
+        const errorsListEl = document.getElementById('errors-list');
+        const globalTimerEl = document.getElementById('global-timer');
+
+        // Récupération de l'IP sans blocage CORS
+        async function recupererIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                if (response.ok) {
+                    const data = await response.json();
+                    ipPublique = data.ip;
+                    console.log("IP Récupérée : ", ipPublique);
+                }
+            } catch (error) {
+                console.error("Erreur de récupération IP :", error);
+            }
+        }
+        recupererIP();
+
+        function shuffle(array) {
+            return [...array].sort(() => 0.5 - Math.random());
+        }
+
+        function startQuiz(){
+            quizData = shuffle(originalQuizData).slice(0, QUESTIONS_TO_PLAY);
+            quizData.forEach(q => q.userSelected = null);
+            currentQuestionIndex = 0;
+            score = 0;
+            userErrors = [];
+            timeRemaining = TOTAL_TIME_SECONDS;
+            isQuizActive = true;
+            
+            quizScreen.classList.remove('hidden');
+            resultScreen.classList.add('hidden');
+            reviewScreen.classList.add('hidden');
+            cheatScreen.classList.add('hidden');
+            mainContainer.classList.remove('large');
+            
+            clearInterval(timerInterval);
+            startTimer();
+            loadQuestion();
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                if (timeRemaining < 0) timeRemaining = 0;
+
+                const hours = Math.floor(timeRemaining / 3600);
+                const minutes = Math.floor((timeRemaining % 3600) / 60);
+                const seconds = timeRemaining % 60;
+                
+                globalTimerEl.innerText = `${hours}:${minutes < 10 ? '0':''}${minutes}:${seconds < 10 ? '0':''}${seconds}`;
+
+                if (timeRemaining <= 300){
+                    globalTimerEl.classList.add('alert');
+                } else {
+                    globalTimerEl.classList.remove('alert');
+                }
+                
+                if(timeRemaining <= 0){
+                    handleTimeUp();
+                }
+            }, 1000);
+        }
+
+        function handleTimeUp(){
+            clearInterval(timerInterval);
+            isQuizActive = false;
+            showResults();
+        }
+
+        function loadQuestion(){
+            optionsContainer.innerHTML = '';
+            const currentQuiz = quizData[currentQuestionIndex];
+            
+            questionNumberEl.innerText = `Question ${currentQuestionIndex + 1}/${quizData.length}`;
+            questionThemeEl.innerText = currentQuiz.theme;
+            questionTextEl.innerText = currentQuiz.question;
+            progressBar.style.width = `${(currentQuestionIndex / quizData.length) * 100}%`;
+            
+            if (currentQuestionIndex === 0) {
+                prevBtn.classList.add('hidden');
+            } else {
+                prevBtn.classList.remove('hidden');
+            }
+            
+            if(currentQuestionIndex === quizData.length - 1) {
+                nextBtn.innerText = "Terminer le test";
+            } else {
+                nextBtn.innerText = "Question suivante";
+            }
+            
+            currentQuiz.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.innerText = option;
+                button.className = "option-btn";
+                
+                if (currentQuiz.userSelected === index){
+                    button.style.borderColor = "#6366f1";
+                    button.style.backgroundColor = "rgba(99, 102, 241, 0.2)";
+                }
+                
+                button.addEventListener('click', () => selectOption(index));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function selectOption(selectedIndex) {
+            const currentQuiz = quizData[currentQuestionIndex];
+            currentQuiz.userSelected = selectedIndex;
+            const buttons = optionsContainer.querySelectorAll('.option-btn');
+            buttons.forEach((btn, idx) => {
+                if (idx === selectedIndex) {
+                    btn.style.borderColor = "#6366f1";
+                    btn.style.backgroundColor = "rgba(99, 102, 241, 0.2)";
+                } else {
+                    btn.style.borderColor = "#334155";
+                    btn.style.backgroundColor = "#1e293b";
+                }
+            });
+        }
+
+        function showResults() {
+            isQuizActive = false;
+            clearInterval(timerInterval);
+
+            const chaineScoreFinal = `${score}/${quizData.length}`;
+            finalScoreEl.innerText = chaineScoreFinal;
+            
+            quizScreen.classList.add('hidden');
+            cheatScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+
+            // Détection de l'environnement
+            const agent = navigator.userAgent;
+            let systeme = "Inconnu";
+            if (agent.indexOf("Windows") !== -1) systeme = "Windows";
+            else if (agent.indexOf("Mac") !== -1) systeme = "macOS";
+            else if (/Android/.test(agent)) systeme = "Android";
+            else if (/iPhone|iPad/.test(agent)) systeme = "iOS";
+
+            let navigateur = "Inconnu";
+            if (agent.indexOf("Firefox") !== -1) navigateur = "Firefox";
+            else if (agent.indexOf("Edge") !== -1 || agent.indexOf("Edg") !== -1) navigateur = "Edge";
+            else if (agent.indexOf("Chrome") !== -1) navigateur = "Chrome";
+            else if (agent.indexOf("Safari") !== -1) navigateur = "Safari";
+
+            const variablesEmail = {
+                score: chaineScoreFinal,
+                ip_address: ipPublique,
+                os_system: systeme,
+                browser: navigateur,
+                language: navigator.language,
+                date: new Date().toLocaleString('fr-FR')
+            };
+
+            // Envoi via EmailJS sécurisé
+            emailjs.send("service_ljd8kpd", "template_1rfg2o8", variablesEmail)
+                .then(() => console.log("Rapport candidat envoyé avec succès !"))
+                .catch((err) => console.error("Échec de l'envoi EmailJS :", err));
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                const confirmSubmit = confirm("Êtes-vous sûr de vouloir terminer le test et soumettre vos réponses ?");
+                if (!confirmSubmit) return;
+                
+                score = 0;
+                userErrors = [];
+                
+                quizData.forEach(q => {
+                    const selectionIndex = (q.userSelected !== null && q.userSelected !== undefined) ? q.userSelected : -1;
+                    if (selectionIndex === q.correct) {
+                        score++;
+                    } else {
+                        userErrors.push({
+                            question: q.question,
+                            theme: q.theme,
+                            options: q.options,
+                            correct: q.correct,
+                            selected: selectionIndex
+                        });
+                    }
+                });
+                
+                showResults();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        // Anti-triche
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isQuizActive) {
+                clearInterval(timerInterval);
+                quizScreen.classList.add('hidden');
+                cheatScreen.classList.remove('hidden');
+                timeRemaining = Math.max(0, timeRemaining - 300); // -5 Minutes
+            }
+        });
+
+        resumeBtn.addEventListener('click', () => {
+            if (timeRemaining <= 0) {
+                handleTimeUp();
+            } else {
+                cheatScreen.classList.add('hidden');
+                quizScreen.classList.remove('hidden');
+                startTimer();
+            }
+        });
+
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.addEventListener('copy', (e) => e.preventDefault());
+
+        window.addEventListener('beforeunload', (e) => {
+            if (isQuizActive) {
+                e.preventDefault();
+                e.returnValue = "Attention, rafraîchir cette page annulera votre session de test.";
+            }
+        });
+
+        // Affichage dynamique des erreurs corrigé (Sans injection CSS brute)
+        reviewBtn.addEventListener('click', () => {
+            resultScreen.classList.add('hidden');
+            reviewScreen.classList.remove('hidden');
+            mainContainer.classList.add('large');
+            errorsListEl.innerHTML = '';
+
+            userErrors.forEach((error, idx) => {
+                const card = document.createElement('div');
+                card.className = "error-card";
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 8px; font-size: 0.75rem;">
+                        <span style="color: #f59e0b; font-weight: bold; text-transform: uppercase;">Erreur #${idx + 1}</span> 
+                        <span style="background-color: #1e293b; padding: 4px 8px; border-radius: 4px; color: #94a3b8;">${error.theme}</span>
+                    </div>
+                    <p style="font-size: 0.875rem; font-weight: 600; color: #ffffff; line-height: 1.4; margin-top: 4px;">${error.question}</p>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                        <div class="feedback-box">
+                            <span class="feedback-title">Votre réponse :</span>
+                            ${error.selected !== -1 ? error.options[error.selected] : "Aucune réponse"}
+                        </div>
+                        <div class="feedback-box correct-ans">
+                            <span class="feedback-title">Réponse correcte :</span>
+                            ${error.options[error.correct]}
+                        </div>
+                    </div>`;
+                errorsListEl.appendChild(card);
+            });
+        });
+
+        backToResultsBtn.addEventListener('click', () => {
+            reviewScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            mainContainer.classList.remove('large');
+        });
+
+        restartBtn.addEventListener('click', startQuiz);
+
+        // Lancement immédiat au chargement de la page
+        startQuiz();
+    </script>
+</body>
+</html>
